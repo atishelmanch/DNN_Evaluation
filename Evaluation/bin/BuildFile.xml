@@ -3,7 +3,7 @@
 <use   name="PhysicsTools/FWLite"/>
 <use   name="PhysicsTools/Utilities"/>
 <use   name="PhysicsTools/SelectorUtils"/>
-<use   name="flashgg/Taggers"/>
+<!--use   name="flashgg/Taggers"/-->
 <use   name="FWCore/ParameterSet"/>
 <use   name="FWCore/ParameterSetReader"/>
 <use   name="FWCore/ServiceRegistry"/>
