@@ -22,4 +22,8 @@
       name="Evaluate_WWggDNN"
       file="Evaluate_WWggDNN.cpp">
   </bin>
+  <bin
+      name="AddWWggVars"
+      file="AddWWggVars.cpp">
+  </bin>
 </environment>

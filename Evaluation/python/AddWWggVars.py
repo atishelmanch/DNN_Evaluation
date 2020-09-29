@@ -1,14 +1,63 @@
 import FWCore.ParameterSet.Config as cms
 
+##-- Electrons, Muons, Jets: Keep all analysis selections except dR, pT
+electronCuts = ""
+muonCuts = ""
+jetCuts = ""
+maxObjects = 5
+
+lepton_pt_cut = 10 
+jet_pt_cut = 25 
+## Define New Variables Pythonically 
+for i in range(0,maxObjects): # info for 5 first electrons, muons, jets saved 
+    elec, muon, jet = "allElectrons_%s"%(i), "allMuons_%s"%(i), "allJets_%s"%(i)
+    electronCuts += "( (%s_pt >= %s) && (%s_passLooseId==1) && (fabs(%s_eta)<1.4442 || (fabs(%s_eta)>1.566 && fabs(%s_eta)<2.5) ) )"%(elec,lepton_pt_cut,elec,elec,elec,elec)
+    muonCuts += "( (%s_pt >= %s) && (%s_isTightMuon==1) && (fabs(%s_eta) <= 2.4 ))"%(muon,lepton_pt_cut,muon,muon)
+    jetCuts += "( (%s_pt>%s) && (%s_passTight2017==1) && fabs(%s_eta) <= 2.4)"%(jet,jet_pt_cut,jet,jet)     
+
+    if(i != maxObjects-1): # if not the last object, multiply by next selection
+        electronCuts += "+"
+        muonCuts += "+"
+        jetCuts += "+"
+
+N_looseElectrons_cut = "%s"%(electronCuts)
+N_looseMuons_cut = "%s"%(muonCuts)
+N_looseJets_cut = "%s"%(jetCuts)
+
+## Input vars necessary to compute new vars 
+requiredVars = [] 
+elecVars = ['pt','passLooseId','eta']
+muonVars = ['pt','isTightMuon','eta'] 
+jetVars = ['pt','passTight2017','eta']
+for i in range(0,maxObjects):
+    elec, muon, jet = "allElectrons_%s"%(i), "allMuons_%s"%(i), "allJets_%s"%(i)
+    for eVar in elecVars:
+      var = "%s_%s"%(elec,eVar)
+      requiredVars.append(var)
+    for muVar in muonVars:
+      var = "%s_%s"%(muon,muVar)
+      requiredVars.append(var)     
+    for jetVar in jetVars:
+      var = "%s_%s"%(jet,jetVar)
+      requiredVars.append(var)
+
+for i,requiredVar in enumerate(requiredVars):
+  N_looseElectrons_cut = N_looseElectrons_cut.replace(requiredVar,"branchVals[%s]"%(i))
+  N_looseMuons_cut = N_looseMuons_cut.replace(requiredVar,"branchVals[%s]"%(i))
+  N_looseJets_cut = N_looseJets_cut.replace(requiredVar,"branchVals[%s]"%(i))
+
+print "N_looseElectrons_cut:",N_looseElectrons_cut
+print "N_looseMuons_cut:",N_looseMuons_cut
+print "N_looseJets_cut:",N_looseJets_cut
+
 process = cms.PSet()
 
 process.ioFilesOpt = cms.PSet(
 
     ##input files
     inputFiles = cms.vstring(
-      #  '/afs/cern.ch/work/a/atishelm/private/HHWWgg_DNN/CMSSW_10_6_8/src/DNN_Evaluation/Evaluation/ggF_SM_WWgg_qqlnugg_Hadded_evalDNN.root'
-       '/afs/cern.ch/work/a/atishelm/public/ForJosh/2017_DataMC_ntuples_moreVars/Signal/ggF_SM_WWgg_qqlnugg_Hadded_WithTaus.root'
-      #  '/afs/cern.ch/work/a/atishelm/public/ForJosh/2017_DataMC_ntuples_moreVars/Backgrounds/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8_Hadded.root',
+      #  '/afs/cern.ch/work/a/atishelm/public/ForJosh/2017_DataMC_ntuples_moreVars/Signal/ggF_SM_WWgg_qqlnugg_Hadded_WithTaus.root'
+       '/afs/cern.ch/work/a/atishelm/public/ForJosh/2017_DataMC_ntuples_moreVars/Backgrounds/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8_Hadded.root',
       #  '/afs/cern.ch/work/a/atishelm/public/ForJosh/2017_DataMC_ntuples_moreVars/Backgrounds/DiPhotonJetsBox_M40_80-Sherpa_Hadded.root',
       #  '/afs/cern.ch/work/a/atishelm/public/ForJosh/2017_DataMC_ntuples_moreVars/Backgrounds/DiPhotonJetsBox_MGG-80toInf_13TeV-Sherpa_Hadded.root',
       #  '/afs/cern.ch/work/a/atishelm/public/ForJosh/2017_DataMC_ntuples_moreVars/Backgrounds/GJet_Pt-20to40_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8_Hadded.root',
@@ -49,42 +98,15 @@ process.ioFilesOpt = cms.PSet(
       #  '/afs/cern.ch/work/a/atishelm/public/ForJosh/2017_DataMC_ntuples_moreVars/Data/Data.root'
     ),
     inputDir = cms.string('tagsDumper/trees'), 
-   #  outputDir = cms.string('/eos/user/b/bmarzocc/HHWWgg/2017_DataMC_ntuples_moreVars/HHWWyyDNN_binary_basictraining_Tag_0_1/'),
-    outputDir = cms.string('/afs/cern.ch/work/a/atishelm/private/HHWWgg_DNN/CMSSW_10_6_8/src/DNN_Evaluation/Evaluation/'),
-    
-    ##input DNN
-    inputModel = cms.string('/afs/cern.ch/work/j/jthomasw/public/forBadder/HHWWyy_networkfiles/HHWWyyDNN_binary_basictraining_Tag_0_1.pb'),
-    inputParams = cms.vstring('dense_1_input:0','dense_6/Sigmoid:0'),   
+    outputDir = cms.string('/eos/user/a/atishelm/ntuples/HHWWgg_DataMC/DNN_addVars/'),
     inputVars = cms.vstring(
-       'goodJets_1_pt',
-       'Leading_Photon_MVA',
-       'goodMuons_0_E', 
-       'goodJets_0_E',
-       'Subleading_Photon_E',
-       'Leading_Photon_pt',
-       'goodJets_1_eta', 
-       'goodJets_1_phi', 
-       'Subleading_Photon_eta', 
-       'goodMuons_0_eta',    
-       'Subleading_Photon_pt', 
-       'goodJets_0_pt',   
-       'goodJets_1_E', 
-       'Subleading_Photon_phi', 
-       'goodMuons_0_pt',     
-       'N_goodJets', 
-       'goodJets_0_phi',  
-       'goodElectrons_0_eta', 
-       'Leading_Photon_phi', 
-       'Subleading_Photon_MVA', 
-       'goodJets_1_bDiscriminator_mini_pfDeepFlavourJetTags_probb', 
-       'goodJets_0_bDiscriminator_mini_pfDeepFlavourJetTags_probb', 
-       'goodElectrons_0_phi', 
-       'Leading_Photon_E', 
-       'goodMuons_0_phi', 
-       'goodJets_0_eta', 
-       'Leading_Photon_eta', 
-       'goodElectrons_0_pt', 
-       'goodElectrons_0_E'
-    ) 
+      requiredVars
+
+    ),
+
+    newVar_Cuts = cms.vstring(
+      N_looseElectrons_cut,
+      N_looseMuons_cut
+    )
 
 )   
